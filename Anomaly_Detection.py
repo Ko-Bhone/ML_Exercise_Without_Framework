@@ -2,96 +2,184 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import loadmat
 
-mat = loadmat("C:/Users/User/Desktop/Machine learning exercise/data1/data/ex8/ex8data1.mat")
-x = mat["X"]
+class GaussianAnomalyDetector:
+    def __init__(self):
+        self.file_path = ("C:/Users/User/Desktop/Machine learning exercise/data1/data/ex8/ex8data1.mat")
+        self.x = None
+        self.x_val = None
+        self.y_val = None
 
-x_val = mat["Xval"]
-y_val = mat["yval"]
+        # MODEL PARAMETERS
+        self.mu = None
+        self.sigma2 = None
+        self.epsilon = None
+        self.best_f1 = None
 
-plt.scatter(x[:,0],x[:,1],marker="x")
-plt.xlim(0,30)
-plt.ylim(0,30)
-plt.xlabel("Latency (ms)")
-plt.ylabel("Throughput (mb/s)")
-plt.show()
+        # Auto Run
+        self.load_data()
+        self.preprocess()
 
-def estimateCussian(x):
-    m = x.shape[0]
-    mu = (1/m) * np.sum(x,axis=0)
-    sigma2 = (1/m) * np.sum((x-mu)**2,axis=0)
-    return mu, sigma2
+    # LOAD DATA
+    def load_data(self):
+        try:
+            mat = loadmat(self.file_path)
+            self.x = mat["X"]
+            self.x_val = mat["Xval"]
+            self.y_val = mat["yval"]
 
-def estimateCussian(x):
-    m = x.shape[0]
-    mu = (1/m) * np.sum(x,axis=0)
+            print("=" * 50)
+            print("Dataset Loaded Successfully")
+            print("=" * 50)
 
-mu, sigma2 = estimateCussian(x)
-print(mu)
-print(sigma2)
+            print(f"Training Shape   : {self.x.shape}")
+            print(f"Validation Shape : {self.x_val.shape}")
+            print(f"Label Shape      : {self.y_val.shape}")
+        except Exception as e:
+            print(f"Error Loading Dataset: {e}")
 
+    # PREPROCESSING
+    def preprocess(self):
+        print("\nChecking Missing Values...")
+        self.x = self.fill_missing_values(self.x)
+        self.x_val = self.fill_missing_values(self.x_val)
+        print("Preprocessing Completed")
 
-def multivariateGaussian(x,mu,sigma2):
-    k = len(mu)
-    sigma2 = np.diag(sigma2)
-    x = x - mu.T
-    p = 1 / ((2*np.pi)**(k/2)*(np.linalg.det(sigma2)**0.5)) * np.exp(-0.5 * np.sum(x @ np.linalg.pinv(sigma2) * x, axis=1))
-    return p
-mu, sigma2 = estimateCussian(x)
-p = multivariateGaussian(x,mu,sigma2)
-print(p.shape)
+    def fill_missing_values(self, data):
+        if np.isnan(data).sum() > 0:
+            print("Missing values detected")
+            for col in range(data.shape[1]):
+                median_value = np.nanmedian(data[:, col])
+                data[:, col] = np.where(np.isnan(data[:, col]), median_value, data[:, col])
+            print("Missing values filled")
+        else:
+            print("No missing values found")
+        return data
 
-def visualizefit(x,mu,sigma2):
-    x1,x2 = np.meshgrid(np.arange(0,35.5,0.5),np.arange(0,35.5,0.5))
-    z = multivariateGaussian(np.stack([x1.ravel(),x2.ravel()],axis=1), mu, sigma2)
-    z = z.reshape(x1.shape)
-    plt.plot(x[:,0],x[:,1],'bx',mec='b',mew=2,ms=8)
-    if np.all(abs(z) != np.inf):
-        plt.contour(x1,x2,z,levels=10 ** (np.arange(-20.,1,3)),zorder=100)
+    # DATA VISUALIZATION
+    def plot_dataset(self):
+        plt.figure(figsize=(10, 7))
+        plt.scatter(self.x[:, 0], self.x[:, 1], marker='x', s=80, alpha=0.8, label="Training Data")
+        plt.xlabel("Latency (ms)", fontsize=12)
+        plt.ylabel("Throughput (mb/s)", fontsize=12)
+        plt.title("Training Dataset", fontsize=15, fontweight='bold')
+        plt.grid(alpha=0.3)
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
 
-visualizefit(x,mu,sigma2)
-plt.xlabel("Latency (ms)")
-plt.ylabel("Throughput (mb/s)")
-plt.tight_layout()
-plt.show()
+    # TRAIN MODEL
+    def fit(self):
+        m = self.x.shape[0]
+        self.mu = (1 / m) * np.sum(self.x, axis=0)
+        self.sigma2 = (1 / m) * np.sum((self.x - self.mu) ** 2, axis=0)
+        print("\n" + "=" * 50)
+        print("Training Completed")
+        print("=" * 50)
+        print("Mu:")
+        print(self.mu)
+        print("\nSigma²:")
+        print(self.sigma2)
 
-def selectThreadshold(y_val,p_val):
-    best_epi = 0
-    best_F1 = 0
+    # MULTIVARIATE GAUSSIAN
+    def multivariate_gaussian(self, x):
+        k = len(self.mu)
+        sigma_matrix = np.diag(self.sigma2)
+        centered_X = x - self.mu.T
+        coefficient = 1 / (((2 * np.pi) ** (k / 2)) * (np.linalg.det(sigma_matrix) ** 0.5))
+        exponent = np.exp(-0.5 * np.sum(centered_X @ np.linalg.pinv(sigma_matrix) * centered_X, axis=1))
+        probability = (coefficient * exponent)
+        return probability
 
-    stepsize = (max(p_val) - min(p_val)) / 1000
-    epi_range = np.arange(p_val.min(),p_val.max(),stepsize)
+    # VISUALIZE GAUSSIAN FIT
+    def visualize_fit(self):
+        x1, x2 = np.meshgrid(np.arange(0, 35.5, 0.5), np.arange(0, 35.5, 0.5))
+        grid_points = np.stack([x1.ravel(), x2.ravel()], axis=1)
+        z = self.multivariate_gaussian(grid_points)
+        z = z.reshape(x1.shape)
+        plt.figure(figsize=(10, 7))
+        plt.scatter(self.x[:, 0], self.x[:, 1], marker='x', s=70, alpha=0.7, label="Training Data")
+        contour = plt.contour(x1, x2, z, levels=10 ** (np.arange(-20., 1, 3)), colors='red', linewidths=1.5)
+        plt.clabel(contour, inline=True, fontsize=8)
+        plt.xlabel("Latency (ms)", fontsize=12)
+        plt.ylabel("Throughput (mb/s)", fontsize=12)
+        plt.title("Gaussian Distribution Fit", fontsize=15, fontweight='bold')
+        plt.grid(alpha=0.3)
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
 
-    for epi in epi_range:
-        prdiction = (p_val < epi)[:,np.newaxis]
-        tp = np.sum((prdiction == y_val) & (y_val == 1))
-        fp = np.sum((prdiction == 1) & (y_val == 0))
-        fn = np.sum((prdiction == 0) & (y_val == 1))
+    # THRESHOLD SELECTION
+    def select_threshold(self):
+        p_val = self.multivariate_gaussian(
+            self.x_val)
+        best_epsilon = 0
+        best_f1 = 0
+        step_size = (p_val.max() - p_val.min()) / 1000
+        epsilon_range = np.arange(p_val.min(), p_val.max(), step_size)
+        for epsilon in epsilon_range:
+            prediction = (p_val < epsilon)
+            tp = np.sum((prediction == self.y_val) & (self.y_val == 1))
+            fp = np.sum((prediction == 1) & (self.y_val == 0))
+            fn = np.sum((prediction == 0) & (self.y_val == 1))
+            precision = (tp / (tp + fp)) if (tp + fp) > 0 else 0
+            recall = (tp / (tp + fn))\
+                if (tp + fn) > 0 \
+                else 0
+            f1 = (2 * precision * recall) / (precision + recall)\
+                if (precision + recall) > 0 else 0
+            if f1 > best_f1:
+                best_f1 = f1
+                best_epsilon = epsilon
+        self.epsilon = best_epsilon
+        self.best_f1 = best_f1
 
-        prec = tp / (tp + fp)
-        rec = tp / (tp + fn)
+        print("\n" + "=" * 50)
+        print("Threshold Selection Completed")
+        print("=" * 50)
 
-        F1 = (2*prec*rec) / (prec+rec)
+        print(f"Best Epsilon : ",f"{self.epsilon}")
+        print(f"Best F1 Score: ",f"{self.best_f1:.4f}")
 
-        if F1 > best_F1:
-            best_F1 = F1
-            best_epi = epi
+    # DETECT OUTLIERS
+    def detect_outliers(self):
+        probabilities = (self.multivariate_gaussian(self.x))
+        outliers = (probabilities < self.epsilon)
+        print(f"\nOutliers Found: ",f"{np.sum(outliers)}")
+        return outliers
 
-    return best_F1,best_epi
+    # PLOT OUTLIERS
+    def plot_outliers(self):
+        outliers = self.detect_outliers()
+        x1, x2 = np.meshgrid(np.arange(0, 35.5, 0.5), np.arange(0, 35.5, 0.5))
+        grid_points = np.stack([x1.ravel(), x2.ravel()], axis=1)
+        z = self.multivariate_gaussian(grid_points)
+        z = z.reshape(x1.shape)
+        plt.figure(figsize=(10, 7))
+        # Normal Data
+        plt.scatter(self.x[:, 0], self.x[:, 1], marker='x', s=70, alpha=0.6, label='Normal Data')
 
-p_val = multivariateGaussian(x_val,mu,sigma2)
-print(p_val.shape)
+        # Outliers
+        plt.scatter(self.x[outliers, 0], self.x[outliers, 1], s=220, facecolors='none', linewidths=2, label='Anomaly')
 
-epsilon,F1 = selectThreadshold(y_val,p_val)
-outlier = p < epsilon
-print(outlier.shape)
-print(sum(outlier))
+        # Gaussian Contour
+        plt.contour(x1, x2, z,levels=10 ** (np.arange(-20., 1, 3)))
+        plt.xlabel("Latency (ms)", fontsize=12)
+        plt.ylabel("Throughput (mb/s)", fontsize=12)
+        plt.title("Anomaly Detection Result", fontsize=15, fontweight='bold')
+        plt.grid(alpha=0.3)
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
 
-visualizefit(x,mu,sigma2)
-plt.xlabel("Latency (ms)")
-plt.ylabel("Throughput (mb/s)")
-plt.tight_layout()
-plt.plot(x[outlier,0],x[outlier,1],'ro',ms=10,mfc="None")
-plt.show()
+    # RUN COMPLETE PIPELINE
+    def run(self):
+        self.plot_dataset()
+        self.fit()
+        self.visualize_fit()
+        self.select_threshold()
+        self.plot_outliers()
 
+if __name__ == "__main__":
 
-
+    detector = GaussianAnomalyDetector()
+    detector.run()
