@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import loadmat
 from numpy.linalg import svd
-
 mat = loadmat("C:/Users/User/Desktop/Machine learning exercise/data1/data/ex7/ex7data1.mat")
 x=mat["X"]
 print(x.shape)

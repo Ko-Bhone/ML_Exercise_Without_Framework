@@ -2,82 +2,92 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import loadmat
 
-mat = loadmat("C:/Users/User/Desktop/Machine learning exercise/data1/data/ex7/ex7data2.mat")
-x=mat["X"]
-print(x.shape)
+class KMeansClustering:
+    def __init__(self, file_path, K=3):
+        self.file_path = file_path
+        self.K = K
+        self.x = None
+        self.centroids = None
+        self.idx = None
 
+    # Load Data
+    def load_data(self):
+        mat = loadmat(self.file_path)
+        self.x = mat["X"]
+        print("Dataset Shape:", self.x.shape)
 
-initialcentroid=np.array([[3,3],[6,5],[8,5]])
-print(initialcentroid.shape)
-K=initialcentroid.shape[0]
+    # Manual centroid initialization
+    def set_initial_centroids(self, centroids):
+        self.centroids = np.array(centroids)
 
-def findCloseCentroid(x,centroids):
-    K = centroids.shape[0]
-    idx = np.zeros((x.shape[0],1),dtype=int)
-    temp = np.zeros((centroids.shape[0],1))
+    def random_initialize_centroids(self):
+        m, n = self.x.shape
+        self.centroids = np.zeros((self.K, n))
+        for i in range(self.K):
+            random_index = np.random.randint(0, m)
+            self.centroids[i] = self.x[random_index]
 
-    for i in range(x.shape[0]):
-        for j in range(K):
-            dist = x[i,:] - centroids[j,:]
-            length = np.sum(dist**2)
-            temp[j] = length
-        idx[i] = np.argmin(temp)+1
-    return idx
+    # Find closest centroid
+    def find_closest_centroid(self):
+        idx = np.zeros((self.x.shape[0], 1), dtype=int)
+        temp = np.zeros((self.K, 1))
+        for i in range(self.x.shape[0]):
+            for j in range(self.K):
+                dist = (self.x[i, :] - self.centroids[j, :])
+                length = np.sum(dist ** 2)
+                temp[j] = length
+            idx[i] = np.argmin(temp) + 1
+        self.idx = idx
 
-idx = findCloseCentroid(x,initialcentroid)
-print(idx.shape)
-print(idx)
+    # Compute new centroids
+    def compute_centroids(self):
+        m, n = self.x.shape
+        centroids = np.zeros((self.K, n))
+        count = np.zeros((self.K, 1))
+        for i in range(m):
+            index = int((self.idx[i] - 1)[0])
+            centroids[index, :] += self.x[i, :]
+            count[index] += 1
+        self.centroids = (centroids / count)
 
-def conputeCentroid(x,idx,K):
-    m,n=x.shape[0],x.shape[1]
-    centroids = np.zeros((K,n))
-    count = np.zeros((K,1))
+    # Plot iterations
+    def plot_kmeans(
+            self, num_iters=10):
+        m, n = self.x.shape
+        fig, ax = plt.subplots(nrows=num_iters, ncols=1, figsize=(6, 36))
+        for i in range(num_iters):
+            colors = "rgb"
+            for k in range(1, self.K + 1):
+                grp = (self.idx == k).reshape(m, 1)
+                ax[i].scatter(self.x[grp[:, 0], 0], self.x[grp[:, 0], 1], c=colors[k - 1], s=15)
 
-    for i in range(m):
-        index = int((idx[i]-1)[0])
-        centroids[index,:] +=x[i,:]
-        count[index]+=1
+            ax[i].scatter(self.centroids[:, 0], self.centroids[:, 1], s=120, marker="x", c="black", linewidth=3)
+            ax[i].set_title(f"Iteration {i + 1}")
+            self.compute_centroids()
+            self.find_closest_centroid()
+        plt.tight_layout()
+        plt.show()
 
-    return centroids / count
+    # Train model
+    def fit(self, num_iters=10):
+        self.find_closest_centroid()
+        self.plot_kmeans(num_iters)
+        print("Final Centroids:")
+        print(self.centroids)
 
-centroid = conputeCentroid(x,idx,3)
+# MAIN PROGRAM
+if __name__ == "__main__":
+    kmeans = KMeansClustering(file_path="C:/Users/User/Desktop/Machine learning exercise/data1/data/ex7/ex7data2.mat",
+                              K=3)
+    kmeans.load_data()
+    # Manual centroid
+    kmeans.set_initial_centroids([
+        [3, 3],
+        [6, 5],
+        [8, 5]
+    ])
 
-print("Centroid after initial",centroid)
+    # Random centroid
+    # kmeans.random_initialize_centroids()
 
-def plotKmean(X,centroids,idx,K,num_iters):
-    m,n = x.shape[0],x.shape[1]
-    fig, ax = plt.subplots(nrows=num_iters,ncols=1,figsize=(6,36))
-
-    for i in range(num_iters):
-        color = "rgb"
-        for K in range(1,K+1):
-            grp=(idx==K).reshape(m,1)
-            ax[i].scatter(x[grp[:,0],0],x[grp[:,0],1],c=color[K-1],s=15)
-
-        ax[i].scatter(centroids[:,0],centroids[:,1],s=120,marker="x",c="black",linewidth=3)
-        title = "Iteration Number" + str(i)
-        ax[i].set_title(title)
-
-        centroids = conputeCentroid(x,idx,K)
-        idx=findCloseCentroid(x,centroids)
-    plt.tight_layout()
-    plt.show()
-
-
-m,n = x.shape[0],x.shape[1]
-plotKmean(x,initialcentroid,idx,K,10)
-
-
-def kmeansInitCentroids(x,k):
-    m,n = x.shape[0],x.shape[1]
-    centroids=np.zeros((k,n))
-
-    for i in range(k):
-        centroids[i] = x[np.random.randint(0,m+1),:]
-
-    return centroids
-
-centroids=kmeansInitCentroids(x,K)
-idx = findCloseCentroid(x,centroids)
-plotKmean(x,centroids,idx,K,10)
-
+    kmeans.fit(num_iters=10)
