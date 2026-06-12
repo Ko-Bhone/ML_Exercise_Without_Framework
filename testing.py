@@ -1,91 +1,121 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.io import loadmat
 
-class KMeansClustering:
-    def __init__(self, file_path, K=3):
+class LogisticRegressionModel:
+    def __init__(self, file_path,alpha=0.1, iterations=400):
         self.file_path = file_path
-        self.K = K
+        self.alpha = alpha
+        self.iterations = iterations
+        self.theta = None
+        self.mean = None
+        self.std = None
+        self.cost_history = []
         self.x = None
-        self.centroids = None
-        self.idx = None
+        self.y = None
 
     # Load Data
     def load_data(self):
-        mat = loadmat(self.file_path)
-        self.x = mat["X"]
-        print("Dataset Shape:", self.x.shape)
-    # Manual centroid initialization
-    def set_initial_centroids(self, centroids):
-        self.centroids = np.array(centroids)
+        data = pd.read_csv(self.file_path, header=None)
+        self.x = data.iloc[:, :-1].to_numpy()
+        self.y = data.iloc[:, -1]\.to_numpy()\.reshape(-1, 1)
 
-    def random_initialize_centroids(self):
-        m, n = self.x.shape
-        self.centroids = np.zeros((self.K, n))
-        for i in range(self.K):
-            random_index = np.random.randint(0, m)
-            self.centroids[i] = self.x[random_index]
+    # Feature Scaling
+    def feature_scaling(self):
+        self.mean = np.mean(self.x, axis=0)
+        self.std = np.std(self.x, axis=0)
+        self.x = (self.x - self.mean) / self.std
 
-    # Find closest centroid
-    def find_closest_centroid(self):
-        idx = np.zeros((self.x.shape[0], 1), dtype=int)
-        temp = np.zeros((self.K, 1))
-        for i in range(self.x.shape[0]):
-            for j in range(self.K):
-                dist = (self.x[i,:] - self.centroids[j, :])
-                length = np.sum(dist ** 2)
-                temp[j] = length
-            idx[i] = np.argmin(temp) + 1
-        self.idx = idx
+    # Sigmoid
+    @staticmethod
+    def sigmoid(z):
+        return 1 / (1 + np.exp(-z))
 
-    # Compute new centroids
-    def compute_centroids(self):
-        m, n = self.x.shape
-        centroids = np.zeros((self.K, n))
-        count = np.zeros((self.K, 1))
-        for i in range(m):
-            index = int((self.idx[i] - 1)[0])
-            centroids[index, :] += self.x[i, :]
-            count[index] += 1
-        self.centroids = (centroids / count)
+    # Cost Function
+    def compute_cost_gradient(self):
+        m = len(self.y)
+        z = np.dot(self.x,self.theta)
+        h = self.sigmoid(z)
+        h = np.clip(h,1e-10, 1 - 1e-10)
+        cost = (-self.y * np.log(h) - (1 - self.y) * np.log(1 - h)).mean()
+        gradient = (np.dot(self.x.T, (h - self.y)) / m)
+        return cost, gradient
 
-    # Plot iterations
-    def plot_kmeans(
-        self, num_iters=10):
-        m, n = self.x.shape
-        fig, ax = plt.subplots(nrows=num_iters, ncols=1, figsize=(6, 36))
-        for i in range(num_iters):
-            colors = "rgb"
-            for k in range(1, self.K + 1):
-                grp = (self.idx == k).reshape(m, 1)
-                ax[i].scatter(self.x[grp[:, 0], 0], self.x[grp[:, 0], 1], c=colors[k - 1], s=15)
+    # Train Model
+    def fit(self):
+        self.load_data()
+        self.feature_scaling()
+        m, n = self.x.shap
+        # Add Bias
+        self.x = np.c_[np.ones((m, 1)),self.x]
+        self.theta = np.zeros((n + 1, 1))
+        for i in range(self.iterations):
+            cost, grad = (self.compute_cost_gradient())
+            self.theta -= (self.alpha * grad)
+            self.cost_history.append(cost)
 
-            ax[i].scatter(self.centroids[:, 0], self.centroids[:, 1], s=120, marker="x", c="black", linewidth=3)
-            ax[i].set_title(f"Iteration {i+1}")
-            self.compute_centroids()
-            self.find_closest_centroid()
-        plt.tight_layout()
+    # Predict Probability
+    def predict_probability(self, score):
+        score = (score - self.mean) / self.std
+        score = np.insert(score,0,1)
+        z = np.dot(score,self.theta)
+        return self.sigmoid(z).item()
+
+    # Predict Class
+    def predict(self):
+        z = np.dot(self.x, self.theta)
+        h = self.sigmoid(z)
+        return h >= 0.5
+
+    # Accuracy
+    def accuracy(self):
+        prediction = self.predict()
+        acc = np.mean(prediction == self.y) * 100
+        return acc
+
+    # Plot Cost
+    def plot_cost(self):
+        plt.figure(figsize=(8, 5))
+        plt.plot(self.cost_history, linewidth=3)
+        plt.title("Cost Convergence")
+        plt.xlabel("Iterations")
+        plt.ylabel("Cost")
+        plt.grid(True)
         plt.show()
 
-    # Train model
-    def fit(self, num_iters=10):
-        self.find_closest_centroid()
-        self.plot_kmeans(num_iters)
-        print("Final Centroids:")
-        print(self.centroids)
+    # Plot Decision Boundary
+        def plot_decision_boundary(self):
+        pos = (self.y == 1).ravel()
+        neg = (self.y == 0).ravel()
+        plt.figure(figsize=(10, 7))
+        plt.scatter(self.x[pos, 1], self.x[pos, 2], marker="+", s=120, label="Admitted")
+        plt.scatter(self.x[neg, 1], self.x[neg, 2], s=80, alpha=0.7, label="Not Admitted")
+        x_value = np.array([np.min(self.x[:, 1]), np.max(self.x[:, 1])])
+        y_value = -(self.theta[0] + self.theta[1] * x_value) / self.theta[2]
+        plt.plot(x_value, y_value.flatten(), linewidth=3, label="Boundary")
+        plt.title("Decision Boundary")
+        plt.xlabel("Exam 1")
+        plt.ylabel("Exam 2")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
 
-# MAIN PROGRAM
+    # Run Entire Project
+    def run(self):
+        self.fit()
+        print("\nTheta:")
+        print(self.theta)
+        probability = (self.predict_probability(np.array([45, 85])) * 100)
+        print(f"\nAdmission Probability: {probability:.2f}%")
+        print(f"\nAccuracy: {self.accuracy():.2f}%")
+        self.plot_cost()
+        self.plot_decision_boundary()
+
+# Main Entry Point
+def main():
+    model = LogisticRegressionModel(
+        file_path="C:/Users/User/Desktop/Machine learning exercise/data1/data/ex2data1.txt")
+    model.run()
+
 if __name__ == "__main__":
-    kmeans = KMeansClustering(file_path="C:/Users/User/Desktop/Machine learning exercise/data1/data/ex7/ex7data2.mat", K=3)
-    kmeans.load_data()
-    # Manual centroid
-    kmeans.set_initial_centroids([
-        [3, 3],
-        [6, 5],
-        [8, 5]
-    ])
-
-    # Random centroid
-    # kmeans.random_initialize_centroids()
-
-    kmeans.fit(num_iters=10)
+    main()

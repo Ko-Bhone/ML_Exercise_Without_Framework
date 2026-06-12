@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
 # Load data
 data = pd.read_csv('C:/Users/User/Desktop/Machine learning exercise/data1/data/ex2data1.txt', header=None)
 x = data.iloc[:, :-1].to_numpy()
@@ -50,17 +51,17 @@ print(theta)
 print(j_history)
 
 # Plot Decision Boundary (FIXED)
-# pos = (y == 1).ravel()
-# neg = (y == 0).ravel()
-# plt.scatter(x[pos, 1], x[pos, 2], c='r', marker='+', label='Admitted')
-# plt.scatter(x[neg, 1], x[neg, 2], c='b', marker='o', label='Not Admitted')
-# x_value = np.array([np.min(x[:,1]), np.max(x[:,1])])
-# y_value = -(theta[0] + theta[1]*x_value) / theta[2]
-# plt.plot(x_value, y_value, 'g')
-# plt.xlabel("Exam 1 Score")
-# plt.ylabel("Exam 2 Score")
-# plt.legend()
-# plt.show()
+pos = (y == 1).ravel()
+neg = (y == 0).ravel()
+plt.scatter(x[pos, 1], x[pos, 2], c='r', marker='+', label='Admitted')
+plt.scatter(x[neg, 1], x[neg, 2], c='b', marker='o', label='Not Admitted')
+x_value = np.array([np.min(x[:,1]), np.max(x[:,1])])
+y_value = -(theta[0] + theta[1]*x_value) / theta[2]
+plt.plot(x_value, y_value, 'g')
+plt.xlabel("Exam 1 Score")
+plt.ylabel("Exam 2 Score")
+plt.legend()
+plt.show()
 
 x_test=np.array([45,85])
 x_test=(x_test - x_mean) / np.std(x_test, axis=0)
