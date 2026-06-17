@@ -14,7 +14,7 @@ class LinearRegressionModel:
         self.theta = None
         # Training history
         self.J_history = []
-gi
+
     # Load and prepare data
     def load_data(self):
         data = pd.read_csv(self.file_path, header=None)
