@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 class LinearRegressionModel:
     def __init__(self, file_path):
         self.file_path = file_path
+
         # Data
         self.x = None
         self.y = None
@@ -13,7 +14,7 @@ class LinearRegressionModel:
         self.theta = None
         # Training history
         self.J_history = []
-
+gi
     # Load and prepare data
     def load_data(self):
         data = pd.read_csv(self.file_path, header=None)
