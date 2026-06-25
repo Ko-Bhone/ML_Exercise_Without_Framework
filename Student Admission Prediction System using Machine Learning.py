@@ -40,6 +40,11 @@ class LogisticRegressionModel:
         self.std = np.std(self.x, axis=0)
         self.x = (self.x - self.mean) / self.std
 
+    def feature_scaling(self):
+        self.mean = np.mean(self.x,axis=0)
+        self.std = np.std(self.x, axis = 0)
+        self.x = (self.x - self.mean) / self.std
+
     # Sigmoid
     @staticmethod
     def sigmoid(z):
@@ -54,6 +59,7 @@ class LogisticRegressionModel:
         cost = (-self.y * np.log(h) - (1 - self.y) * np.log(1 - h)).mean()
         gradient = (np.dot(self.x.T, (h - self.y)) / m)
         return cost, gradient
+
 
     # Train Model
     def fit(self):
@@ -116,6 +122,7 @@ class LogisticRegressionModel:
         plt.legend()
         plt.grid(True)
         plt.show()
+
 
     # Run Entire Project
     def run(self):
