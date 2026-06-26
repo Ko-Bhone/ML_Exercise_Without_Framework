@@ -13,6 +13,7 @@ class DigitClassifier:
         self.X = None
         self.y = None
         # Logistic
+
         self.all_theta = None
         self.log_cost_history = []
         # Neural Network

@@ -91,3 +91,4 @@ if __name__ == "__main__":
     # kmeans.random_initialize_centroids()
 
     kmeans.fit(num_iters=10)
+#helief
