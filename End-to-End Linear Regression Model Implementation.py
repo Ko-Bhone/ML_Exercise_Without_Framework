@@ -31,7 +31,7 @@ class LinearRegressionModel:
 
     # Plot training data
     def plot_training_data(self):
-        plt.plot(self.x[:, 1], self.y, 'ro', ms=8, mec='k')
+        plt.plot(self.x[:, 1], self.y.ravel(), 'ro', ms=8, mec='k')
         plt.ylabel('Profit in 10,000 $')
         plt.xlabel('Population of City in 10,000s')
 
@@ -44,12 +44,12 @@ class LinearRegressionModel:
 
     # Gradient Descent
     def gradient_descent(self, alpha=0.01, num_iter=1500):
-        self.J_history = []
         for i in range(num_iter):
             h = np.dot(self.x, self.theta)
             d = h - self.y
             self.theta = self.theta - ((alpha / self.m) * np.dot(self.x.T, d))
             self.J_history.append(self.compute_cost())
+        return self.theta
 
     # Train model
     def train(self, alpha=0.01, num_iter=1500):
@@ -58,6 +58,17 @@ class LinearRegressionModel:
         self.gradient_descent(alpha, num_iter)
         print("\nTheta:")
         print(self.theta)
+        print(self.J_history)
+
+    # Cost History Plot
+    def plot_cost_history(self):
+        plt.figure(figsize=(7,5))
+        plt.plot(self.J_history)
+        plt.xlabel('Iteration')
+        plt.ylabel('Cost')
+        plt.title('Cost History')
+        plt.grid(True)
+        plt.show()
 
     # Plot regression line
     def plot_regression_line(self):
@@ -78,6 +89,7 @@ if __name__ == "__main__":
     model = LinearRegressionModel("C:/Users/User/Desktop/Machine learning exercise/data1/data/ex1data1.txt")
     model.load_data()
     model.train(alpha=0.01, num_iter=1500)
+    model.plot_cost_history()
     model.plot_regression_line()
     prediction = model.predict(3.5)
     print("\nPrediction for population 35,000 =", prediction)

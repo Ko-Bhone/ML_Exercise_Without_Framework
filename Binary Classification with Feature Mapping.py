@@ -12,7 +12,6 @@ class RegularizedLogisticRegression:
 
         # Data
         self.df = None
-
         self.x_original = None
         self.x = None
         self.y = None
@@ -52,7 +51,6 @@ class RegularizedLogisticRegression:
 
     # Cost Function + Gradient
     def cost_function(self, theta):
-
         m = len(self.y)
         h = self.sigmoid(self.x @ theta)
         h = np.clip(h, 1e-10, 1 - 1e-10)
