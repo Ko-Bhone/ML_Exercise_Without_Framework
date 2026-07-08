@@ -9,6 +9,7 @@ class LogisticRegressionModel:
         self.iterations = iterations
         self.theta = None
         self.mean = None
+
         self.std = None
         self.cost_history = []
         self.x = None
@@ -40,12 +41,8 @@ class LogisticRegressionModel:
         self.std = np.std(self.x, axis=0)
         self.x = (self.x - self.mean) / self.std
 
-    def feature_scaling(self):
-        self.mean = np.mean(self.x,axis=0)
-        self.std = np.std(self.x, axis = 0)
-        self.x = (self.x - self.mean) / self.std
 
-    # Sigmoid
+   # Sigmoid
     @staticmethod
     def sigmoid(z):
         return 1 / (1 + np.exp(-z))
