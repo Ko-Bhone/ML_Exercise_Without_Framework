@@ -21,6 +21,31 @@ class LogisticRegressionModel:
         self.x = data.iloc[:, :-1].to_numpy()
         self.y = data.iloc[:, -1].to_numpy().reshape(-1, 1)
 
+    # eda
+    def eda(self):
+        data = pd.read_csv(self.file_path, header=None)
+        print("\n=== EDA ===")
+        print(data.head())
+        print("\nShape:", data.shape)
+        print("\nInfo:")
+        print(data.info())
+        print("\nDescribe:\n", data.describe())
+        print("\nMissing:\n", data.isnull().sum())
+        print("\nDuplicates:", data.duplicated().sum())
+        print("\nClass:\n", data.iloc[:, -1].value_counts())
+
+    # outlier detect
+    def outlier_detection(self):
+        cols = ["Exam1", "Exam2"]
+        for i, c in enumerate(cols):
+            q1 = np.percentile(self.x[:, i], 25);
+            q3 = np.percentile(self.x[:, i], 75)
+            iqr = q3 - q1
+            low = q1 - 1.5 * iqr;
+            up = q3 + 1.5 * iqr
+            out = self.x[(self.x[:, i] < low) | (self.x[:, i] > up)]
+            print(c, ":", len(out), "outliers")
+
     # Plot Raw Data
     def plot_raw_data(self):
         pos = (self.y == 1).ravel()
@@ -61,6 +86,10 @@ class LogisticRegressionModel:
     # Train Model
     def fit(self):
         self.load_data()
+        #eda
+        self.eda()
+        #outlier_detect
+        self.outlier_detection()
         # Visualize raw data before preprocessing
         self.plot_raw_data()
         # Feature Scaling
