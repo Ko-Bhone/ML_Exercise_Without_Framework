@@ -1,0 +1,15 @@
+# Virtual Environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Ignore specific files
+B vs V.py
+Pca.py
+svm.py
+testing.py
+
+# Ignore numpy model
+*.npy
