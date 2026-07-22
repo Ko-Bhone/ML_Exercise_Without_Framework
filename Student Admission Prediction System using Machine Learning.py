@@ -82,7 +82,6 @@ class LogisticRegressionModel:
         gradient = (np.dot(self.x.T, (h - self.y)) / m)
         return cost, gradient
 
-
     # Train Model
     def fit(self):
         self.load_data()

@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import loadmat
 
-
 # DATA LOADER CLASS
 class DataLoader:
     def __init__(self, path_x, path_theta=None):
